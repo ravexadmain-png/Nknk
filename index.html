@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Auto Login Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f9;
+    }
+    .loading-card {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <h3 id="status-text">Verifying App Authentication...</h3>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrVACRScvFyCZrZo5igxTSdfbzvzmmetA",
+      authDomain: "check-6f17c.firebaseapp.com",
+      databaseURL: "https://check-6f17c-default-rtdb.firebaseio.com",
+      projectId: "check-6f17c",
+      storageBucket: "check-6f17c.firebasestorage.app",
+      messagingSenderId: "550995651245",
+      appId: "1:550995651245:web:2237fc749c7e6cc0337424",
+      measurementId: "G-9JBV6ZBWJ3"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+
+    // 1. URL Parameter থেকে UID সংগ্রহ করা
+    const urlParams = new URLSearchParams(window.location.search);
+    const userUid = urlParams.get('uid');
+    const statusText = document.getElementById('status-text');
+
+    if (userUid) {
+      // 2. Firebase Database-এ UID চেক করা
+      const dbRef = ref(database);
+      get(child(dbRef, `users/${userUid}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          // ইউজার পাওয়া গেছে, Local Storage এ সেশন সেট করা
+          const userData = snapshot.val();
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("userUid", userUid);
+          localStorage.setItem("userData", JSON.stringify(userData));
+
+          statusText.innerText = "Login Successful! Redirecting...";
+
+          // ৩. সফল হলে Dashboard বা Home পেজে পাঠানো
+          setTimeout(() => {
+            window.location.href = "/dashboard.html"; // আপনার কাঙ্ক্ষিত পেজের নাম দিন
+          }, 1000);
+
+        } else {
+          statusText.innerText = "Access Denied: User not found!";
+        }
+      }).catch((error) => {
+        console.error(error);
+        statusText.innerText = "Authentication Error!";
+      });
+
+    } else {
+      statusText.innerText = "Invalid Request: No UID provided!";
+    }
+  </script>
+</body>
+</html>
